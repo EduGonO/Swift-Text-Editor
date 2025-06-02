@@ -21,6 +21,7 @@
 import Foundation
 import UIKit
 import CoreServices
+import ProtonCore
 
 class RichTextEditorContext: RichTextViewContext {
     static let `default` = RichTextEditorContext()
