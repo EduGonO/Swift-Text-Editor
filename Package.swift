@@ -14,7 +14,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-
+// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
@@ -24,23 +24,24 @@ let package = Package(
         .visionOS(.v1)
     ],
     products: [
-        .library(name: "Proton", targets: ["Proton"]),
+        .library(name: "Proton",     targets: ["Proton"]),
         .library(name: "ProtonCore", targets: ["ProtonCore"])
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git",
-                 branch: "master")
+        .package(
+          url: "https://github.com/pointfreeco/swift-snapshot-testing.git",
+          branch: "master"
+        )
     ],
     targets: [
         .target(
             name: "ProtonCore",
-            dependencies: [],
-            path: "Proton/Sources/ObjC"         
+            path: "Proton/Sources/ProtonCore"
         ),
         .target(
             name: "Proton",
             dependencies: ["ProtonCore"],
-            path: "Proton/Sources/Swift"
+            path: "Proton/Sources/Proton"
         ),
         .testTarget(
             name: "ProtonTests",
