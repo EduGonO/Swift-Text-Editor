@@ -7,7 +7,7 @@ public protocol DefaultTextFormattingProviding: AnyObject {
   var textColor: UIColor { get }
 }
 
-// @objc(TextStorageDelegate)
+@objc(TextStorageDelegate)
 public protocol TextStorageDelegate: AnyObject {
   func textStorage(_ textStorage: PRTextStorage, didDelete attachment: NSTextAttachment)
   func textStorage(_ textStorage: PRTextStorage, will deleteText: NSAttributedString, insertText: NSAttributedString, in range: NSRange)
