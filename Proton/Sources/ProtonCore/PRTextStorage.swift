@@ -16,7 +16,7 @@ public protocol TextStorageDelegate: AnyObject {
 
  public class PRTextStorage: NSTextStorage {
   public weak var defaultTextFormattingProvider: DefaultTextFormattingProviding?
-  public weak var textStorageDelegate: TextStorageDelegate
+  public weak var textStorageDelegate: TextStorageDelegate?
 
   private let storage = NSTextStorage()
 
