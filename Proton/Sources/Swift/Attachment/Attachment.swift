@@ -218,7 +218,7 @@ open class Attachment: NSTextAttachment, BoundsObserving {
 
     @objc
     var spacer: NSAttributedString {
-        let spacer = isBlockAttachment == true ? NSAttributedString(string: "\n", attributes: [.blockContentType: EditorContentName.newline()]) : NSAttributedString(string: " ")
+        let spacer = isBlockAttachment == true ? NSAttributedString(string: "\n", attributes: [NSAttributedString.Key..blockContentType: EditorContentName.newline()]) : NSAttributedString(string: " ")
         return spacer
     }
     
