@@ -1,6 +1,7 @@
 import Foundation
 
-/// The Swift type that represents "content‐name" (was `PREditorContentName` in Obj-C).
+/// The Swift class that used to be PREditorContentName in Objective-C.
+/// All of the Swift code refers to EditorContentName.blockContentType(), etc.
 public final class EditorContentName: NSObject, NSSecureCoding {
   public static var supportsSecureCoding: Bool { true }
   public let rawValue: String
@@ -14,8 +15,9 @@ public final class EditorContentName: NSObject, NSSecureCoding {
   }
 
   public required init?(coder: NSCoder) {
-    guard let value = coder.decodeObject(of: NSString.self, forKey: "rawValue") as String?
-    else { return nil }
+    guard let value = coder.decodeObject(of: NSString.self, forKey: "rawValue") as String? else {
+      return nil
+    }
     self.rawValue = value
   }
 
@@ -25,28 +27,70 @@ public final class EditorContentName: NSObject, NSSecureCoding {
   }
 
   public override var hash: Int { rawValue.hashValue }
+
   public override var description: String {
     "EditorContent.Name(rawValue: \"\(rawValue)\")"
   }
 
-  // Exactly match what the rest of Proton’s Swift code calls "blockContentType," etc.
-  public static var blockContentType: EditorContentName {
+  // --------------------------------------------------------------------------------------------
+  // MARK: • Static factory methods
+  //
+  // Swift code in Proton/Sources/Swift expects to call:
+  //    EditorContentName.paragraph(),
+  //    EditorContentName.newline(),
+  //    EditorContentName.blockContentType(),
+  //    EditorContentName.inlineContentType(),
+  //    EditorContentName.isBlockAttachment(), etc.
+  // So we provide them all here:
+
+  /// "Paragraph" content (used for ordinary blocks)
+  public static func paragraph() -> EditorContentName {
     EditorContentName(rawValue: "_paragraph")
   }
-  public static var viewOnlyContentType: EditorContentName {
+
+  /// "View‐only" marker
+  public static func viewOnly() -> EditorContentName {
     EditorContentName(rawValue: "_viewOnly")
   }
-  public static var newlineContentType: EditorContentName {
+
+  /// "Newline" marker
+  public static func newline() -> EditorContentName {
     EditorContentName(rawValue: "_newline")
   }
-  public static var textContentType: EditorContentName {
+
+  /// "Text" marker (inline text)
+  public static func text() -> EditorContentName {
     EditorContentName(rawValue: "_text")
   }
-  public static var unknownContentType: EditorContentName {
+
+  /// "Unknown" marker
+  public static func unknown() -> EditorContentName {
     EditorContentName(rawValue: "_unknown")
+  }
+
+  /// Swift code treats "blockContentType" as the same rawValue as paragraph()
+  public static func blockContentType() -> EditorContentName {
+    EditorContentName(rawValue: "_paragraph")
+  }
+
+  /// Swift code treats "inlineContentType" (we pick "_inline" here)
+  public static func inlineContentType() -> EditorContentName {
+    EditorContentName(rawValue: "_inline")
+  }
+
+  /// Marker for "Block Attachment"
+  public static func isBlockAttachment() -> EditorContentName {
+    EditorContentName(rawValue: "_isBlockAttachment")
+  }
+
+  /// Marker for "Inline Attachment"
+  public static func isInlineAttachment() -> EditorContentName {
+    EditorContentName(rawValue: "_isInlineAttachment")
   }
 }
 
-/// In some places Proton’s Swift code refers to "EditorContent" directly,
-/// so we alias it here to this class.
+/// In many Swift files they refer to `EditorContent.Name`.
+/// We do *not* introduce a second "EditorContent" type here--that’s in Proton/Sources/Swift.
+/// But if any code ever imports ProtonCore directly and writes `EditorContent`,
+/// it’ll see this alias. It does not interfere with the `struct EditorContent` in the Proton module.
 public typealias EditorContent = EditorContentName

@@ -20,7 +20,7 @@
 
 import Foundation
 import UIKit
-import ProtonCore
+import ProtonCore   // brings in EditorContentName, PRTextStorage, etc.
 
 /// Type of attachment
 public enum AttachmentType {
@@ -35,37 +35,46 @@ public enum EditorContentType {
     case viewOnly
 }
 
-/// Defines a content type for `Editor`. This may be used to serialize the contents of an `Editor` via enumerating through the contents of the `Editor`.
+/// Defines "one piece of content" inside the Editor (either text, an attachment, or view‐only)
 public struct EditorContent {
-
-    /// Type of `EditorContent`
+    /// Either text or attachment or view‐only
     public let type: EditorContentType
 
-    /// Range within the `Editor` for this content
+    /// The range in the overall NSAttributedString that this content occupies
     public let enclosingRange: NSRange?
 
-    init(type: EditorContentType) {
+    public init(type: EditorContentType) {
         self.type = type
         self.enclosingRange = nil
     }
 
-    init(type: EditorContentType, enclosingRange: NSRange) {
+    public init(type: EditorContentType, enclosingRange: NSRange) {
         self.type = type
         self.enclosingRange = enclosingRange
     }
 }
 
 public extension EditorContent {
-    /// Name for the content within the Editor. All the content (text  and attachments) must have
-    /// a name. By default, text contained in Editor is considered a paragraph.
+    /// Everywhere in Proton’s Swift code, when they write `EditorContent.Name` they want this type:
     typealias Name = EditorContentName
 }
+
+// --------------------------------------------------------------------------------------------
+// MARK: • RawRepresentable conformance for EditorContentName
+//
+// We imported `EditorContentName` from ProtonCore.  Now we give it a RawRepresentable
+// conformance so that Swift code can treat it like a "String‐backed enum."
 
 extension EditorContentName: RawRepresentable {
     public convenience init(_ rawValue: String) {
         self.init(rawValue: rawValue)
     }
-    
+
+    // `EditorContentName` already has `public let rawValue: String` and `init(rawValue: String)`,
+    // so this satisfies RawRepresentable’s requirements automatically.
+    // 
+    // Now we add the static constants that Swift code expects as "shortcuts."
+
     public static let paragraph = EditorContentName.paragraph()
     public static let viewOnly = EditorContentName.viewOnly()
     public static let newline = EditorContentName.newline()

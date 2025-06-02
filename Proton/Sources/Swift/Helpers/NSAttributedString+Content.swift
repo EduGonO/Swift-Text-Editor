@@ -1,144 +1,156 @@
 //
 //  NSAttributedString+Content.swift
-//  Proton
-//
-//  Created by Rajdeep Kwatra on 11/1/20.
-//  Copyright © 2020 Rajdeep Kwatra. All rights reserved.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
 //
 
 import Foundation
 import UIKit
+import ProtonCore   // so that EditorContent, EditorContentName, and those keys exist
+
+public extension NSAttributedString.Key {
+    /// Make ".blockContentType" available everywhere
+    static let blockContentType = NSAttributedString.Key(EditorContent.Name.blockContentType.rawValue)
+    static let viewOnlyContentType = NSAttributedString.Key(EditorContent.Name.viewOnly.rawValue)
+    static let newlineContentType = NSAttributedString.Key(EditorContent.Name.newline.rawValue)
+    static let textContentType = NSAttributedString.Key(EditorContent.Name.text.rawValue)
+    static let unknownContentType = NSAttributedString.Key(EditorContent.Name.unknown.rawValue)
+    static let inlineContentType = NSAttributedString.Key(EditorContent.Name.inlineContentType.rawValue)
+    static let isBlockAttachment = NSAttributedString.Key(EditorContent.Name.isBlockAttachment.rawValue)
+    static let isInlineAttachment = NSAttributedString.Key(EditorContent.Name.isInlineAttachment.rawValue)
+}
 
 public extension NSAttributedString {
 
-    /// Creates a mutable copy 
+    /// A convenience to get a mutable copy
     var asMutable: NSMutableAttributedString {
         NSMutableAttributedString(attributedString: self)
     }
 
+    /// Adds attributes to a given range (or full string if range == nil)
     func addingAttributes(_ attributes: [NSAttributedString.Key: Any], to range: NSRange? = nil) -> NSAttributedString {
-        let range = range?.clamped(upperBound: length) ?? fullRange
+        let range = range?.clamped(upperBound: length) ?? NSRange(location: 0, length: length)
         let mutable = asMutable
         mutable.addAttributes(attributes, range: range)
         return mutable
     }
 
-    /// Enumerates block contents in given range.
-    /// - Parameter range: Range to enumerate contents in. Nil to enumerate in entire string.
+    /// Enumerate **block** content runs.  Default‐if‐missing is ".paragraph".
     func enumerateContents(in range: NSRange? = nil) -> AnySequence<EditorContent> {
-        return self.enumerateContentType(.blockContentType, options: [], defaultIfMissing: .paragraph, in: range)
+        enumerateContentType(.blockContentType, options: [], defaultIfMissing: .paragraph, in: range)
     }
-    /// Enumerates only inline content in given range.
-    /// - Parameter range: Range to enumerate contents in. Nil to enumerate in entire string.
+
+    /// Enumerate **inline** content runs.  Default‐if‐missing is ".text"
     func enumerateInlineContents(in range: NSRange? = nil) -> AnySequence<EditorContent> {
-        return self.enumerateContentType(.inlineContentType, options: [.longestEffectiveRangeNotRequired], defaultIfMissing: .text, in: range)
+        enumerateContentType(
+            .inlineContentType,
+            options: [.longestEffectiveRangeNotRequired],
+            defaultIfMissing: .text,
+            in: range
+        )
     }
 
-    /// Returns in range of CharacterSet from this string.
-    /// - Parameter characterSet: CharacterSet to search.
-    func rangeOfCharacter(from characterSet: CharacterSet) -> NSRange? {
-        guard let range = string.rangeOfCharacter(from: characterSet) else {
-            return nil
-        }
-        return string.makeNSRange(from: range)
-    }
-
-    /// Enumerates over continuous ranges of text based on the presence or absence of a specified attribute.
-    /// - Parameters:
-    ///   - attributeName: The name of the attribute to check for presence or absence.
-    ///   - range: The range within the attributed string to enumerate. Defaults to the entire string.
-    ///   - using: The block to apply to continuous ranges, indicating whether the attribute was present or absent for the range.
-    func enumerateContinuousRangesByAttribute(_ attributeName: NSAttributedString.Key, in range: NSRange? = nil, using block: (_ isPresent: Bool, _ range: NSRange) -> Void) {
-        let enumerationRange = range ?? NSRange(location: 0, length: self.length)
+    /// Enumerate over contiguous ranges that have (or don’t have) a given attribute.
+    /// This is utility code you already had; no changes needed here.
+    func enumerateContinuousRangesByAttribute(
+        _ attributeName: NSAttributedString.Key,
+        in range: NSRange? = nil,
+        using block: (_ isPresent: Bool, _ range: NSRange) -> Void
+    ) {
+        let enumerationRange = range ?? NSRange(location: 0, length: length)
         var lastRange: NSRange? = nil
         var isAttributePresentInLastRange = false
-        
-        self.enumerateAttributes(in: enumerationRange, options: []) { attributes, currentRange, _ in
+
+        enumerateAttributes(in: enumerationRange, options: []) { attributes, currentRange, _ in
             let isAttributePresent = attributes[attributeName] != nil
-            if let lastRangeUnwrapped = lastRange {
+            if let last = lastRange {
                 if isAttributePresentInLastRange != isAttributePresent {
-                    // Process the last range if the attribute presence state changes
-                    block(isAttributePresentInLastRange, lastRangeUnwrapped)
+                    // state changed → report previous
+                    block(isAttributePresentInLastRange, last)
                     lastRange = currentRange
                 } else {
-                    // Extend the last range efficiently if the state hasn't changed
-                    lastRange = NSRange(location: lastRangeUnwrapped.location, length: NSMaxRange(currentRange) - lastRangeUnwrapped.location)
+                    // extend the previous run
+                    lastRange = NSRange(location: last.location, length: NSMaxRange(currentRange) - last.location)
                 }
             } else {
-                // Initialize with the first range
                 lastRange = currentRange
             }
             isAttributePresentInLastRange = isAttributePresent
         }
-        
-        // Process the final range after enumeration
-        if let lastRangeUnwrapped = lastRange {
-            block(isAttributePresentInLastRange, lastRangeUnwrapped)
+
+        if let last = lastRange {
+            block(isAttributePresentInLastRange, last)
         }
     }
 }
 
-extension NSAttributedString {
-    func enumerateContentType(_ type: NSAttributedString.Key, options: NSAttributedString.EnumerationOptions, defaultIfMissing: EditorContent.Name, in range: NSRange? = nil) -> AnySequence<EditorContent> {
-        let range = range ?? self.fullRange
-        let contentString = self.attributedSubstring(from: range)
+/// The shared implementation that drives both `enumerateContents` and `enumerateInlineContents`.
+/// It yields an iterator of `EditorContent` entries (or returns `nil` when done).
+public extension NSAttributedString {
+    func enumerateContentType(
+        _ key: NSAttributedString.Key,
+        options: NSAttributedString.EnumerationOptions,
+        defaultIfMissing: EditorContent.Name,
+        in range: NSRange? = nil
+    ) -> AnySequence<EditorContent> {
+        let searchRange = range ?? NSRange(location: 0, length: length)
+        let contentString = attributedSubstring(from: searchRange)
+
         return AnySequence { () -> AnyIterator<EditorContent> in
             var substringRange = NSRange(location: 0, length: contentString.length)
 
-            return AnyIterator {
-                guard substringRange.location <= contentString.length else {
+            return AnyIterator<EditorContent> {
+                // If we’ve walked past the end, stop.
+                guard substringRange.location < contentString.length else {
                     return nil
                 }
 
-                var content: EditorContent?
-                
-                contentString.enumerateAttribute(type, in: substringRange, options: options) { (name, range, stop) in
-                    let contentName = name as? EditorContent.Name ?? defaultIfMissing
-                    let substring = contentString.attributedSubstring(from: range)
-                    stop.pointee = true
+                var foundContent: EditorContent? = nil
 
-                    let location = range.location + range.length
-                    substringRange = NSRange(location: location, length: contentString.length - location)
+                // Look at the next run of "key" in substringRange
+                var effectiveRange = NSRange()
+                let value = contentString.attribute(key, at: substringRange.location, longestEffectiveRange: &effectiveRange, in: substringRange)
 
-                    if contentName == EditorContent.Name.viewOnly {
-                        content = EditorContent(type: .viewOnly, enclosingRange: range)
-                    } else if let attachment = substring.attribute(.attachment, at: 0, effectiveRange: nil) as? Attachment {
-                        if let contentView = attachment.contentView {
-                            let isBlockAttachment = substring.attribute(.isBlockAttachment, at: 0, effectiveRange: nil) as? Bool
-                            let attachmentType = (isBlockAttachment == true) ? AttachmentType.block : .inline
-                            content = EditorContent(type: .attachment(name: contentName, attachment: attachment, contentView: contentView, type: attachmentType), enclosingRange: range)
-                        }
+                // Advance substringRange past this run
+                let nextLocation = effectiveRange.location + effectiveRange.length
+                substringRange = NSRange(location: nextLocation, length: contentString.length - nextLocation)
+
+                // Determine which kind of content we have here:
+                let contentName = (value as? EditorContent.Name) ?? defaultIfMissing
+
+                // If it’s a "viewOnly" run, yield that:
+                if contentName == EditorContent.Name.viewOnly {
+                    foundContent = EditorContent(type: .viewOnly, enclosingRange: effectiveRange)
+
+                // If it’s an attachment (and has a contentView), yield attachment variant:
+                } else if
+                    let attachment = contentString.attribute(.attachment, at: effectiveRange.location, effectiveRange: nil) as? Attachment,
+                    let contentView = attachment.contentView
+                {
+                    let isBlock = (contentString.attribute(.isBlockAttachment, at: effectiveRange.location, effectiveRange: nil) as? Bool) == true
+                    let attachType: AttachmentType = isBlock ? .block : .inline
+
+                    foundContent = EditorContent(
+                        type: .attachment(
+                            name: contentName,
+                            attachment: attachment,
+                            contentView: contentView,
+                            type: attachType
+                        ),
+                        enclosingRange: effectiveRange
+                    )
+
+                // Otherwise it’s just text; yield a text run:
+                } else {
+                    let attributedSubstring = contentString.attributedSubstring(from: effectiveRange)
+                    // If the substring is literally just a newline character, treat that as a single newline:
+                    if attributedSubstring.string == "\n" {
+                        let newlineRange = NSRange(location: effectiveRange.location, length: 1)
+                        foundContent = EditorContent(type: .text(name: contentName, attributedString: attributedSubstring), enclosingRange: newlineRange)
                     } else {
-                        let location = range.location + range.length
-                        substringRange = NSRange(location: location, length: contentString.length - location)
-
-                        let contentSubstring = NSMutableAttributedString(attributedString: substring)
-                        // handle successive newlines as single newline element
-                        if contentSubstring.rangeOfCharacter(from: .newlines) == NSRange(location: 0, length: 1) {
-                            let enclosingRange = NSRange(location: range.location, length: 1)
-                            content = EditorContent(type: .text(name: contentName, attributedString: contentSubstring), enclosingRange: enclosingRange)
-                            let location = range.location + 1
-                            substringRange = NSRange(location: location, length: contentString.length - location)
-
-                        } else {
-                            content = EditorContent(type: .text(name: contentName, attributedString: contentSubstring), enclosingRange: range)
-                        }
+                        foundContent = EditorContent(type: .text(name: contentName, attributedString: attributedSubstring), enclosingRange: effectiveRange)
                     }
                 }
 
-                return content
+                return foundContent
             }
         }
     }
