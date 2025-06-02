@@ -41,7 +41,7 @@ let package = Package(
         .target(
             name: "Proton",
             dependencies: ["ProtonCore"],
-            path: "Proton/Sources/Proton"
+            path: "Proton/Sources/Swift"
         ),
         .testTarget(
             name: "ProtonTests",
