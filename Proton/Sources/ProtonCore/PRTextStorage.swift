@@ -182,7 +182,7 @@ public class PRTextStorage: NSTextStorage {
   }
 
   public override func edited(
-    _ editedMask: NSTextStorageEditActions,
+    _ editedMask: NSTextStorage.EditActions,
     range editedRange: NSRange,
     changeInLength delta: Int
   ) {
