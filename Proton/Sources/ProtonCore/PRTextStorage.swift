@@ -11,7 +11,7 @@ public protocol PRDefaultTextFormattingProviding: AnyObject {
 public protocol PRTextStorageDelegate: AnyObject {
   func textStorage(_ textStorage: PRTextStorage, didDelete attachment: NSTextAttachment)
   func textStorage(_ textStorage: PRTextStorage, will deleteText: NSAttributedString, insertText: NSAttributedString, in range: NSRange)
-  func textStorage(_ textStorage: PRTextStorage, edited actions: NSTextStorageEditActions, in editedRange: NSRange, changeInLength delta: Int)
+  func textStorage(_ textStorage: PRTextStorage, edited actions: NSTextStorage.EditActions, in editedRange: NSRange, changeInLength delta: Int)
 }
 
 public class PRTextStorage: NSTextStorage {
