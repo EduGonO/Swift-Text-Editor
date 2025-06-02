@@ -15,9 +15,11 @@ public protocol TextStorageDelegate: AnyObject {
 }
 
  public class PRTextStorage: NSTextStorage {
+  public var preserveNewlineBeforeBlock: Bool = false
+  public var preserveNewlineAfterBlock: Bool = false
+
   public weak var defaultTextFormattingProvider: DefaultTextFormattingProviding?
   public weak var textStorageDelegate: TextStorageDelegate?
-
   private let storage = NSTextStorage()
 
   public override init() {

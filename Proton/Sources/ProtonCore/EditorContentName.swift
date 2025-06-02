@@ -1,19 +1,21 @@
 import Foundation
 
+/// The Swift type that represents "content‐name" (was `PREditorContentName` in Obj-C).
 public final class EditorContentName: NSObject, NSSecureCoding {
   public static var supportsSecureCoding: Bool { true }
   public let rawValue: String
 
-  public init(rawValue: String) { self.rawValue = rawValue }
+  public init(rawValue: String) {
+    self.rawValue = rawValue
+  }
 
   public func encode(with coder: NSCoder) {
     coder.encode(rawValue, forKey: "rawValue")
   }
 
   public required init?(coder: NSCoder) {
-    guard let value = coder.decodeObject(of: NSString.self, forKey: "rawValue") as String? else {
-      return nil
-    }
+    guard let value = coder.decodeObject(of: NSString.self, forKey: "rawValue") as String?
+    else { return nil }
     self.rawValue = value
   }
 
@@ -27,19 +29,24 @@ public final class EditorContentName: NSObject, NSSecureCoding {
     "EditorContent.Name(rawValue: \"\(rawValue)\")"
   }
 
-  public static func paragraphName() -> EditorContentName {
+  // Exactly match what the rest of Proton’s Swift code calls "blockContentType," etc.
+  public static var blockContentType: EditorContentName {
     EditorContentName(rawValue: "_paragraph")
   }
-  public static func viewOnlyName() -> EditorContentName {
+  public static var viewOnlyContentType: EditorContentName {
     EditorContentName(rawValue: "_viewOnly")
   }
-  public static func newlineName() -> EditorContentName {
+  public static var newlineContentType: EditorContentName {
     EditorContentName(rawValue: "_newline")
   }
-  public static func textName() -> EditorContentName {
+  public static var textContentType: EditorContentName {
     EditorContentName(rawValue: "_text")
   }
-  public static func unknownName() -> EditorContentName {
+  public static var unknownContentType: EditorContentName {
     EditorContentName(rawValue: "_unknown")
   }
 }
+
+/// In some places Proton’s Swift code refers to "EditorContent" directly,
+/// so we alias it here to this class.
+public typealias EditorContent = EditorContentName
